@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import * as http from 'http';
 import * as WebSocket from 'ws';
 import { connect, NatsConnectionOptions, Payload } from 'ts-nats';
+let wsClients: WebSocket[] = [];
 
 const app = express();
 
@@ -12,23 +13,33 @@ const server = http.createServer(app);
 //initialize the WebSocket server instance
 const wss = new WebSocket.Server({ server });
 
-wss.on('connection', (ws: WebSocket) => {
+wss.on('connection', (ws: WebSocket, req: http.IncomingMessage) => {
   //connection is up, let's add a simple simple event
-  ws.on('message', (message: string) => {
-    //log the received message and send it back to the client
-    console.log('received: %s', message);
 
-    let nc = connect({ servers: ['nats://172.17.03:4222'] }).then(res => {
-      res.subscribe('greetings', (err, msg) => {
-        wss.clients.forEach(clients => {
-          if (clients.readyState === WebSocket.OPEN) {
-            clients.send(msg.data);
-          }
-        });
-        console.log(msg);
-      });
+  ws.on('message', (message: string) => {
+    var event = JSON.parse(message);
+    ws.emit(event.type, event.payload);
+    //log the received message and send it back to the client
+
+    // let nc = connect({ servers: ['nats://172.17.03:4222'] }).then(res => {
+    //   res.subscribe('greetings', (err, msg) => {
+    //     wss.clients.forEach(clients => {
+    //       if (clients.readyState === WebSocket.OPEN) {
+    //         clients.send(msg.data);
+    //       }
+    //     });
+    //     console.log(msg);
+    //   });
+    // });
+    // ws.send(`Hello, you sent -> ${message}`);
+  }).on('authenticate', e => {
+    ws.send(`Hello, you sent -> ${JSON.stringify(e)}`);
+
+    wsClients[e.clientId] = ws;
+    console.log(wsClients);
+    wss.clients.forEach(v => {
+      console.log(wsClients[1].send('hey2'));
     });
-    ws.send(`Hello, you sent -> ${message}`);
   });
 
   //send immediatly a feedback to the incoming connection
