@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import * as http from 'http';
 import * as WebSocket from 'ws';
 import { connect, NatsConnectionOptions, Payload } from 'ts-nats';
+import { KSPJS110 } from '../../picking-ts/server/models/spModel.interface';
 let wsClients: WebSocket[] = [];
 
 const app = express();
@@ -12,15 +13,29 @@ const server = http.createServer(app);
 
 //initialize the WebSocket server instance
 const wss = new WebSocket.Server({ server });
+let kSpJs110: KSPJS110 = {
+  param_in: {
+    pAction: '',
+    pSucursal: 0,
+    pidOrden: 2,
+    pFolio: 13,
+    pCodigo: '',
+    pIdUsu: 0,
+    pCodigoSust: '',
+    pLpn: '',
+    pSurtido: 0
+  }
+};
+// function nc() {
+//   return connect({ servers: ['nats://10.10.201.124:32771'] });
+// }
 
-function nc() {
-  return connect({ servers: ['nats://172.17.03:4222'] });
-}
+// const nConn = nc();
 wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
   // nc().then(res => {
   //   res.subscribe('update-orders', (err, msg) => {});
   // });
-  ws.on('message', (msg: string) => {
+  ws.on('message', async (msg: string) => {
     var slData = JSON.parse(msg) as {
       route: {
         clientId: number;
@@ -29,44 +44,42 @@ wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
         customerId: number;
       };
     };
-    nc().then(res => {
-      res.subscribe(
-        `{"orderId": ${slData.route.orderId}, "surtidorId": ${
-          slData.route.surtidorId
-        }, "customerId": ${slData.route.customerId}}`,
-        (err, msg) => {
-          console.log(err);
-          console.log(msg);
-        }
-      );
-    });
+    const ruta: any = JSON.parse(msg);
+    console.log(ruta.folio);
+    let nc = await connect({ servers: ['nats://10.10.201.124:32771'] });
+    nc.subscribe(`folio.${ruta.folio}.orden.${ruta.idOrden}`, (err, message) => {
+      console.log('hola')
+      if (err) {
+        console.log('error', err);
+      } else {
+          //         wss.clients.forEach(client => {
+            
+          //   if (client !== ws && client.readyState === WebSocket.OPEN) {
+          //     client.send(message.data)
+          //   }
+          // })
+          ws.send(message.data);
+      }
+    }, {})
+    // nc.then(res => {
+    //   res.subscribe(`folio.${13}.orden.${2}`, (err, message) => {
+    //     console.log(err === null);
+    //     if (err === null) {
+    //       wss.clients.forEach(client => {
+    //         console.log(wss.clients);
+    //         if (client !== ws && client.readyState === WebSocket.OPEN) {
+    //           client.send(JSON.stringify(message))
+    //         }
+    //       })
+    //     }
+    //   })
+    //   res.close();
+    // });
   });
-  // res.subscribe('update-orders', (err, msg) => {
-  //   ws.on('message', (message: string) => {
-  //     var event = JSON.parse(message);
-  //     ws.emit(msg.data.type, 'test');
-  //   });
-  // });
-  //connection is up, let's add a simple simple event
-  // ws.on('message', (message: string) => {
-  //   var event = JSON.parse(message);
-  //   ws.emit(event.type, event.payload);
-  //   //log the received message and send it back to the client
-  //   // ws.send(`Hello, you sent -> ${message}`);
-  // }).on('authenticate', e => {
-  //   ws.send(`Hello, you sent -> ${JSON.stringify(e)}`);
-  //   wsClients[e.clientId] = ws;
-  //   wsClients.forEach((v, i, a) => {
-  //     if (v.readyState === v.OPEN) {
-  //       v.send('hey' + i);
-  //     }
-  //   });
-  // });
-  //send immediatly a feedback to the incoming connection
-  // ws.send('Hi there, I am a WebSocket server');
+
 });
 
 //start our server
-server.listen(process.env.PORT || 3000, () => {
+server.listen(process.env.PORT || 4000, () => {
   console.log(`Server started on port ${server.address()} :)`);
 });
