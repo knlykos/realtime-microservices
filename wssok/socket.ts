@@ -6,7 +6,7 @@ var http = require('http').createServer(app);
 var io: SocketIO.Server = require('socket.io')(http);
 
 function nc(): Promise<Client> {
-  return connect({ servers: ['nats://172.17.03:4222'] });
+  return connect({ servers: ['nats://10.10.201.124:4223'] });
 }
 
 // app.all('/*', function(req, res, next) {
