@@ -14,9 +14,9 @@ function nc(): Promise<Client> {
 //   next();
 // });
 
-io.on('connection', function (socket: socketio.Socket) {
-
+io.on('connection', function(socket: socketio.Socket) {
   socket.on('ksp100-sl', data => {
+    console.log('data.room', data.room);
     socket.join(data.room);
     nc().then(res => {
       res.subscribe(data.room, (err, msg) => {
@@ -28,6 +28,7 @@ io.on('connection', function (socket: socketio.Socket) {
   });
 
   socket.on('ksp110-sls', data => {
+    console.log('data.room', data.room);
     socket.join(data.room);
     nc().then(res => {
       res.subscribe(data.room, (err, msg) => {
@@ -39,7 +40,7 @@ io.on('connection', function (socket: socketio.Socket) {
   });
 
   socket.on('ksp110-sl', data => {
-    console.log(data);
+    console.log('data.room', data.room);
     socket.join(data.room);
     nc().then(res => {
       res.subscribe(data.room, (err, msg) => {
@@ -51,6 +52,7 @@ io.on('connection', function (socket: socketio.Socket) {
 
   // ksp110 - slp;
   socket.on('ksp110-slp', data => {
+    console.log('data.room', data.room);
     socket.join(data.room);
     nc().then(res => {
       res.subscribe(data.room, (err, msg) => {
@@ -62,6 +64,7 @@ io.on('connection', function (socket: socketio.Socket) {
   });
 
   socket.on('ksp110-slsag', data => {
+    console.log('data.room', data.room);
     socket.join(data.room);
     console.log('ksp110-slsag', data.room);
     nc().then(res => {
@@ -76,7 +79,7 @@ io.on('connection', function (socket: socketio.Socket) {
 
 // ksp110.slsagp.orden.${this.kSpJs110.param_in.pidOrden}.folio.${this.kSpJs110.param_in.pFolio}
 
-http.listen(3000, function () {
+http.listen(3000, function() {
   console.log('listening on *:3000');
 });
 
